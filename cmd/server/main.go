@@ -29,6 +29,19 @@ func main() {
 		log.Fatalf("channel.open: %s", err)
 	}
 
+	_, queue, err := pubsub.DeclareAndBind(
+		conn,
+		routing.ExchangePerilTopic,
+		"game_logs",
+		"game_logs.*",
+		pubsub.QUEUE_Durable,
+	)
+
+	if err != nil {
+		log.Fatalf("could not subscribe to game logs: %v", err)
+		fmt.Println(queue)
+	}
+
 	game.PrintServerHelp()
 
 Loop:
