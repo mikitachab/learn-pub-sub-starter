@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	game "github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
@@ -12,6 +13,12 @@ import (
 )
 
 const queueURL = "amqp://guest:guest@localhost:5672/"
+
+func handlerLog(gamelog routing.GameLog) pubsub.Acktype {
+	defer fmt.Print("> ")
+	gamelogic.WriteLog(gamelog)
+	return pubsub.ACK
+}
 
 func main() {
 	conn, err := amqp.Dial(queueURL)
@@ -29,17 +36,17 @@ func main() {
 		log.Fatalf("channel.open: %s", err)
 	}
 
-	_, queue, err := pubsub.DeclareAndBind(
+	err = pubsub.SubscribeGOB(
 		conn,
 		routing.ExchangePerilTopic,
-		"game_logs",
-		"game_logs.*",
+		routing.GameLogSlug,
+		routing.GameLogSlug+".*",
 		pubsub.QUEUE_Durable,
+		handlerLog,
 	)
 
 	if err != nil {
 		log.Fatalf("could not subscribe to game logs: %v", err)
-		fmt.Println(queue)
 	}
 
 	game.PrintServerHelp()
